@@ -1,3 +1,6 @@
+基于pity二次开发，以下是原文
+
+
 [English](https://github.com/wuranxu/pity/blob/main/README_EN.md)
 
 ![png](https://img.shields.io/badge/Python-3.8+-green)

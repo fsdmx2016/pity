@@ -24,7 +24,8 @@ async def insert_environment(data: EnvironmentForm, user_info=Depends(Permission
 
 @router.post("/environment/update")
 async def update_environment(data: EnvironmentForm, user_info=Depends(Permission(Config.ADMIN))):
-    ans = await EnvironmentDao.update_record_by_id(user_info['id'], data, True, True)
+    # ans = await EnvironmentDao.update_record_by_id(user_info['id'], data, True, True)
+    ans = await EnvironmentDao.update_environment(data, user_info['id'])
     return PityResponse.success(ans)
 
 

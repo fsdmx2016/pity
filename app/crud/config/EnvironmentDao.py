@@ -58,3 +58,20 @@ class EnvironmentDao(Mapper):
         except Exception as e:
             cls.__log__.error(f"获取环境列表失败, {str(e)}")
             raise Exception(f"获取环境数据失败: {str(e)}")
+
+    @classmethod
+    async  def update_environment(cls, data: EnvironmentForm, user):
+        try:
+            async with async_session() as session:
+                async with session.begin():
+                    query = await session.execute(select(Environment).where(Environment.id == data.id))
+                    env = query.scalars().first()
+                    if env is None:
+                        raise Exception(f"环境: {data.id}不存在")
+                    env.name = data.name
+                    env.remarks= data.remarks
+                    session.add(env)
+                    session.commit()
+        except Exception as e:
+            cls.__log__.error(f"更新环境失败, {str(e)}")
+            raise Exception(f"更新环境失败: {str(e)}")

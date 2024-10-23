@@ -24,12 +24,11 @@ async def insert_environment(data: EnvironmentForm, user_info=Depends(Permission
 
 @router.post("/environment/update")
 async def update_environment(data: EnvironmentForm, user_info=Depends(Permission(Config.ADMIN))):
-    # ans = await EnvironmentDao.update_record_by_id(user_info['id'], data, True, True)
     ans = await EnvironmentDao.update_environment(data, user_info['id'])
     return PityResponse.success(ans)
 
 
 @router.get("/environment/delete")
-async def delete_environment(id: int, user_info=Depends(Permission(Config.ADMIN)), session=Depends(get_session)):
-    await EnvironmentDao.delete_record_by_id(session, user_info['id'], id)
+async def delete_environment(id: int, user_info=Depends(Permission(Config.ADMIN)),):
+    await EnvironmentDao.delete_environment(id,user_info['id'])
     return PityResponse.success()

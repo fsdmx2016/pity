@@ -1,9 +1,12 @@
-from sqlalchemy import select
+import time
+
+from sqlalchemy import select,update
 
 from app.crud import ModelWrapper, Mapper
 from app.models import async_session
 from app.models.environment import Environment
 from app.schema.environment import EnvironmentForm
+from app.models.address import PityGateway
 
 
 @ModelWrapper(Environment)
@@ -60,7 +63,7 @@ class EnvironmentDao(Mapper):
             raise Exception(f"获取环境数据失败: {str(e)}")
 
     @classmethod
-    async  def update_environment(cls, data: EnvironmentForm, user):
+    async def update_environment(cls, data: EnvironmentForm, user):
         try:
             async with async_session() as session:
                 async with session.begin():
@@ -68,10 +71,29 @@ class EnvironmentDao(Mapper):
                     env = query.scalars().first()
                     if env is None:
                         raise Exception(f"环境: {data.id}不存在")
+                    env = Environment(**data.dict(), user=user)
                     env.name = data.name
-                    env.remarks= data.remarks
+                    env.remarks = data.remarks
                     session.add(env)
-                    session.commit()
         except Exception as e:
             cls.__log__.error(f"更新环境失败, {str(e)}")
             raise Exception(f"更新环境失败: {str(e)}")
+
+    @classmethod
+    async def delete_environment(cls, id: int, user):
+        try:
+            async with async_session() as session:
+                async with session.begin():
+                    query = await session.execute(select(Environment).where(Environment.id == id))
+                    env = query.scalars().first()
+                    if env is None:
+                        raise Exception(f"环境: {id}不存在")
+                    # 查询地址，有没有关联的环境ID
+                    is_has_address=await session.execute(select(PityGateway).where(env.id == id, PityGateway.deleted_at == 0))
+                    if is_has_address.scalars().first() is not None:
+                        raise Exception(f"该环境: {id}下存在网关，请先删除网关")
+                    env.deleted_at = int(time.time() * 1000)
+                    session.add(env)
+        except Exception as e:
+            cls.__log__.error(f"删除环境失败, {str(e)}")
+            raise Exception(f"删除环境失败: {str(e)}")

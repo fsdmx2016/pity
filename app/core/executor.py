@@ -167,6 +167,7 @@ class Executor(object):
     def extract_out_parameters(self, response_info, data: List[PityTestCaseOutParameters]):
         """提取出参数据"""
         result = dict()
+        print("出餐数据"+str(data))
         for d in data:
             p = parameters_parser(d.source)
             result[d.name] = p(response_info, d.expression, idx=d.match_index)
@@ -197,15 +198,8 @@ class Executor(object):
             method = case_info.request_method.upper()
             response_info["request_method"] = method
 
-            # Step1: 获取构造数据
-            constructors = await self.get_constructor(case_id)
-
-            # Step2: 获取断言
-            asserts = await TestCaseAssertsDao.async_list_test_case_asserts(case_id)
-
-            # Step3: 获取出参信息
-            out_parameters = await PityTestCaseOutParametersDao.select_list(case_id=case_id)
-
+            constructors, asserts, out_parameters=await self.case_run_init(case_id)
+            # 以上部分逻辑是一样的都是查询数据
             # Step4: 执行前置条件
             await self.execute_constructors(env, path, case_params, constructors)
 
@@ -259,6 +253,21 @@ class Executor(object):
             if self._main:
                 response_info["logs"] = self.logger.join()
             return response_info, f"执行用例失败: {str(e)}"
+
+    # 数据运行前置数据获取
+    async def case_run_init(self, case_id):
+        # Step1: 获取构造数据
+        # 对应前端页面的前置步骤数据-操作Constructor库
+        constructors = await self.get_constructor(case_id)
+
+        # Step2: 获取断言
+        # 对应前端页面的断言数据-操作TestCaseAsserts库
+        asserts = await TestCaseAssertsDao.async_list_test_case_asserts(case_id)
+
+        # Step3: 获取出参信息
+        # 对应前端页面的出参提取-操作PityTestCaseOutParameters库
+        out_parameters = await PityTestCaseOutParametersDao.select_list(case_id=case_id)
+        return constructors, asserts, out_parameters
 
     @staticmethod
     def get_dict(json_data: str):
